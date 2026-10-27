@@ -6,5 +6,154 @@
   "javascript": {
     "formatter": { "quoteStyle": "single", "trailingCommas": "all", "semicolons": "always" }
   },
-  "linter": { "rules": { "preset": "recommended" } }
+  "linter": {
+    "rules": {
+      "preset": "recommended",
+      "suspicious": { "noImportCycles": "error" },
+      "style": {
+        "useFilenamingConvention": {
+          "level": "error",
+          "options": { "filenameCases": ["kebab-case"] }
+        },
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "patterns": [
+              {
+                "group": ["#modules/*/**"],
+                "message": "Import a module only through its public entry: #modules/<name>."
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["src/*.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["#modules/*/**"],
+                    "message": "Import a module only through its public entry: #modules/<name>."
+                  },
+                  {
+                    "group": ["./modules/**", "./shared/**"],
+                    "message": "Use the #modules/<name> or #shared/<file> aliases."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/shared/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["#modules/**", "../**"],
+                    "message": "shared/ is the lowest layer: it must not import modules or app code."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/modules/*/*.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["#modules/*/**"],
+                    "message": "Import a module only through its public entry: #modules/<name>."
+                  },
+                  {
+                    "group": ["../**"],
+                    "message": "Do not leave the module with relative imports; use #modules/<name> or #shared/<file>."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/modules/*/*/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["#modules/*/**"],
+                    "message": "Import a module only through its public entry: #modules/<name>."
+                  },
+                  {
+                    "group": ["../../**"],
+                    "message": "Do not leave the module with relative imports; use #modules/<name> or #shared/<file>."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/modules/*/domain/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "fastify": "domain/ must stay framework-free: no Fastify.",
+                  "node:http": "domain/ must stay free of HTTP.",
+                  "node:https": "domain/ must stay free of HTTP."
+                },
+                "patterns": [
+                  {
+                    "group": ["#modules/*/**"],
+                    "message": "Import a module only through its public entry: #modules/<name>."
+                  },
+                  {
+                    "group": ["../../**"],
+                    "message": "Do not leave the module with relative imports; use #modules/<name> or #shared/<file>."
+                  },
+                  {
+                    "group": ["../routes/**", "../adapters/**", "fastify/**"],
+                    "message": "domain/ must not depend on routes/, adapters/ or Fastify."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }
