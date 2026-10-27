@@ -10,6 +10,9 @@
   "packageManager": "pnpm@11.25.0",
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "lint": "biome lint",
+    "format": "biome format --write",
+    "check": "biome check",
     "build": "tsc",
     "test": "pnpm run build && node --test tests/*.test.mjs",
     "start": "node dist/server.js",
@@ -21,6 +24,7 @@
     "fastify": "5.12.7"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.3",
     "@types/node": "24.19.2",
     "typescript": "5.9.3"
   },
