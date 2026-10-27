@@ -18,6 +18,19 @@
         "noRestrictedImports": {
           "level": "error",
           "options": {
+            "paths": {
+              "axios": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+              "node-fetch": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+              "got": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+              "superagent": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+              "node:test": "Prohibited test runner: use Vitest (ARCHITECTURE.md, Library lifecycle).",
+              "jest": "Prohibited test runner: use Vitest (ARCHITECTURE.md, Library lifecycle).",
+              "mocha": "Prohibited test runner: use Vitest (ARCHITECTURE.md, Library lifecycle).",
+              "express": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle).",
+              "koa": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle).",
+              "hapi": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle).",
+              "@hapi/hapi": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle)."
+            },
             "patterns": [
               {
                 "group": ["#modules/*/**"],
@@ -38,6 +51,19 @@
             "noRestrictedImports": {
               "level": "error",
               "options": {
+                "paths": {
+                  "axios": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+                  "node-fetch": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+                  "got": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+                  "superagent": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+                  "node:test": "Prohibited test runner: use Vitest (ARCHITECTURE.md, Library lifecycle).",
+                  "jest": "Prohibited test runner: use Vitest (ARCHITECTURE.md, Library lifecycle).",
+                  "mocha": "Prohibited test runner: use Vitest (ARCHITECTURE.md, Library lifecycle).",
+                  "express": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle).",
+                  "koa": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle).",
+                  "hapi": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle).",
+                  "@hapi/hapi": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle)."
+                },
                 "patterns": [
                   {
                     "group": ["#modules/*/**"],
@@ -62,6 +88,19 @@
             "noRestrictedImports": {
               "level": "error",
               "options": {
+                "paths": {
+                  "axios": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+                  "node-fetch": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+                  "got": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+                  "superagent": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+                  "node:test": "Prohibited test runner: use Vitest (ARCHITECTURE.md, Library lifecycle).",
+                  "jest": "Prohibited test runner: use Vitest (ARCHITECTURE.md, Library lifecycle).",
+                  "mocha": "Prohibited test runner: use Vitest (ARCHITECTURE.md, Library lifecycle).",
+                  "express": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle).",
+                  "koa": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle).",
+                  "hapi": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle).",
+                  "@hapi/hapi": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle)."
+                },
                 "patterns": [
                   {
                     "group": ["#modules/**", "../**"],
@@ -82,6 +121,19 @@
             "noRestrictedImports": {
               "level": "error",
               "options": {
+                "paths": {
+                  "axios": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+                  "node-fetch": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+                  "got": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+                  "superagent": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+                  "node:test": "Prohibited test runner: use Vitest (ARCHITECTURE.md, Library lifecycle).",
+                  "jest": "Prohibited test runner: use Vitest (ARCHITECTURE.md, Library lifecycle).",
+                  "mocha": "Prohibited test runner: use Vitest (ARCHITECTURE.md, Library lifecycle).",
+                  "express": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle).",
+                  "koa": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle).",
+                  "hapi": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle).",
+                  "@hapi/hapi": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle)."
+                },
                 "patterns": [
                   {
                     "group": ["#modules/*/**"],
@@ -106,6 +158,19 @@
             "noRestrictedImports": {
               "level": "error",
               "options": {
+                "paths": {
+                  "axios": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+                  "node-fetch": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+                  "got": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+                  "superagent": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+                  "node:test": "Prohibited test runner: use Vitest (ARCHITECTURE.md, Library lifecycle).",
+                  "jest": "Prohibited test runner: use Vitest (ARCHITECTURE.md, Library lifecycle).",
+                  "mocha": "Prohibited test runner: use Vitest (ARCHITECTURE.md, Library lifecycle).",
+                  "express": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle).",
+                  "koa": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle).",
+                  "hapi": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle).",
+                  "@hapi/hapi": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle)."
+                },
                 "patterns": [
                   {
                     "group": ["#modules/*/**"],
@@ -133,7 +198,18 @@
                 "paths": {
                   "fastify": "domain/ must stay framework-free: no Fastify.",
                   "node:http": "domain/ must stay free of HTTP.",
-                  "node:https": "domain/ must stay free of HTTP."
+                  "node:https": "domain/ must stay free of HTTP.",
+                  "axios": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+                  "node-fetch": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+                  "got": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+                  "superagent": "Prohibited for HTTP calls: use native fetch (ARCHITECTURE.md, Library lifecycle).",
+                  "node:test": "Prohibited test runner: use Vitest (ARCHITECTURE.md, Library lifecycle).",
+                  "jest": "Prohibited test runner: use Vitest (ARCHITECTURE.md, Library lifecycle).",
+                  "mocha": "Prohibited test runner: use Vitest (ARCHITECTURE.md, Library lifecycle).",
+                  "express": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle).",
+                  "koa": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle).",
+                  "hapi": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle).",
+                  "@hapi/hapi": "Prohibited HTTP server: use Fastify (ARCHITECTURE.md, Library lifecycle)."
                 },
                 "patterns": [
                   {

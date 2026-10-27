@@ -28,6 +28,12 @@ const SOURCES: Record<string, string> = {
   'src/modules/decks/domain/BadName.ts': 'export const ok = 1;',
   'src/modules/cyc-a/index.ts': "import { b } from '#modules/cyc-b'; export const a = () => b;",
   'src/modules/cyc-b/index.ts': "import { a } from '#modules/cyc-a'; export const b = () => a;",
+  // Prohibited libraries: one violation per zone (root, shared, module, routes, domain).
+  'src/bad-http-root.ts': "import axios from 'axios'; export const p1 = axios;",
+  'src/shared/bad-runner.ts': "import { test } from 'node:test'; export const p2 = test;",
+  'src/modules/decks/bad-server.ts': "import express from 'express'; export const p3 = express;",
+  'src/modules/decks/routes/bad-got.ts': "import got from 'got'; export const p4 = got;",
+  'src/modules/decks/domain/bad-hapi.ts': "import Hapi from '@hapi/hapi'; export const p5 = Hapi;",
   // Allowed: must produce no diagnostics.
   'src/modules/decks/routes/ok-route.ts':
     "import { health } from '#modules/health'; import { s } from '#shared/util'; import { pure } from '../domain/pure.js'; export const r = [health, s, pure];",
@@ -48,6 +54,11 @@ const VIOLATIONS = [
   { file: 'src/modules/decks/domain/BadName.ts', rule: 'lint/style/useFilenamingConvention' },
   { file: 'src/modules/cyc-a/index.ts', rule: 'lint/suspicious/noImportCycles' },
   { file: 'src/modules/cyc-b/index.ts', rule: 'lint/suspicious/noImportCycles' },
+  { file: 'src/bad-http-root.ts', rule: 'lint/style/noRestrictedImports' },
+  { file: 'src/shared/bad-runner.ts', rule: 'lint/style/noRestrictedImports' },
+  { file: 'src/modules/decks/bad-server.ts', rule: 'lint/style/noRestrictedImports' },
+  { file: 'src/modules/decks/routes/bad-got.ts', rule: 'lint/style/noRestrictedImports' },
+  { file: 'src/modules/decks/domain/bad-hapi.ts', rule: 'lint/style/noRestrictedImports' },
 ] as const;
 
 const ALLOWED = [
@@ -122,6 +133,16 @@ describe('architecture rules canary', () => {
       hasDiagnosticFor(file, rule),
       `expected a ${rule} diagnostic starting with ${file}\n${biome?.stdout}${biome?.stderr}`,
     );
+  });
+
+  test('prohibited-library diagnostics name the replacement', () => {
+    const output = `${biome?.stdout ?? ''}${biome?.stderr ?? ''}`;
+    for (const phrase of ['use native fetch', 'use Vitest', 'use Fastify']) {
+      assert.ok(
+        output.includes(phrase),
+        `expected diagnostic output to include "${phrase}"\n${output}`,
+      );
+    }
   });
 
   test('allowed files produce no diagnostics', () => {
