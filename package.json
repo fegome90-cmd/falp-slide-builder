@@ -1,0 +1,28 @@
+{
+  "name": "falp-slide-builder",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "packageManager": "pnpm@11.25.0",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "test": "pnpm run build && node --test tests/*.test.mjs",
+    "start": "node dist/server.js",
+    "dev": "pnpm run build && pnpm run --parallel \"/^dev:/\"",
+    "dev:tsc": "tsc --watch --preserveWatchOutput",
+    "dev:server": "node --watch dist/server.js"
+  },
+  "dependencies": {
+    "fastify": "5.12.7"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "typescript": "5.9.3"
+  },
+  "description": "Personal presentation-builder project: initial Fastify backend foundation; not an institutional FALP product."
+}
