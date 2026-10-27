@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { STATUS_CODES } from 'node:http';
 import Fastify, { type FastifyInstance, LogController } from 'fastify';
-import { healthPlugin } from './plugins/health.js';
+import { healthPlugin } from '#modules/health';
 
 export interface AppComposition {
   /** Register cross-cutting plugins (for example Swagger) before any routes. */

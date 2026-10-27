@@ -4,6 +4,18 @@
   "private": true,
   "license": "MIT",
   "type": "module",
+  "imports": {
+    "#modules/*": {
+      "types": "./src/modules/*/index.ts",
+      "development": "./src/modules/*/index.ts",
+      "default": "./dist/modules/*/index.js"
+    },
+    "#shared/*": {
+      "types": "./src/shared/*.ts",
+      "development": "./src/shared/*.ts",
+      "default": "./dist/shared/*.js"
+    }
+  },
   "engines": {
     "node": ">=24 <25"
   },
