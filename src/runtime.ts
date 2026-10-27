@@ -1,8 +1,15 @@
 import type { FastifyInstance } from 'fastify';
 import { readServerConfig } from './config.js';
 
+export const DEFAULT_SHUTDOWN_TIMEOUT_MS = 10_000;
+
 /** HTTP lifecycle; only the entrypoint should invoke this function. */
-export async function listen(app: FastifyInstance): Promise<string> {
+export async function listen(
+  app: FastifyInstance,
+  options: { shutdownTimeoutMs?: number } = {},
+): Promise<string> {
+  const shutdownTimeoutMs = options.shutdownTimeoutMs ?? DEFAULT_SHUTDOWN_TIMEOUT_MS;
+
   // Invalid configuration must release registered plugins and resources too.
   let config;
   try {
@@ -16,10 +23,18 @@ export async function listen(app: FastifyInstance): Promise<string> {
   async function shutdown(): Promise<void> {
     if (closing) return;
     closing = true;
+    // A hung onClose hook or open handle must not keep the process alive forever.
+    // Not unref'd: a close that never settles must still end with exit code 1.
+    const forceExit = setTimeout(() => {
+      process.exitCode = 1;
+      process.exit();
+    }, shutdownTimeoutMs);
     try {
       await app.close();
     } catch {
       process.exitCode = 1;
+    } finally {
+      clearTimeout(forceExit);
     }
   }
 
