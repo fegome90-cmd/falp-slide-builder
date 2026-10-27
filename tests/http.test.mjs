@@ -45,6 +45,27 @@ test('404, malformed JSON 400, body-limit 413 and sanitized 500', async (t) => {
   assert.equal(failed.json().status, 500);
 });
 
+test('5xx logs error type and stack frames but never the message', async (t) => {
+  const app = buildApp();
+  t.after(() => app.close());
+  const logged = [];
+  app.addHook('onRequest', async (request) => {
+    const original = request.log.error.bind(request.log);
+    request.log.error = (obj, msg) => { logged.push(obj); original(obj, msg); };
+  });
+  app.get('/boom', async () => { const e = new TypeError('LEAKY_MESSAGE line1\nLEAKY_LINE2'); e.code = 'E_TEST'; throw e; });
+
+  const response = await app.inject({ method: 'GET', url: '/boom' });
+  assert.equal(response.statusCode, 500);
+  const entry = logged.find(obj => obj.statusCode === 500);
+  assert.ok(entry);
+  assert.equal(entry.errorName, 'TypeError');
+  assert.equal(entry.errorCode, 'E_TEST');
+  assert.equal(typeof entry.stack, 'string');
+  assert.ok(entry.stack.includes('at '));
+  assert.ok(!JSON.stringify(logged).includes('LEAKY'));
+});
+
 test('Problem Details titles reflect 403 and 502 without leaking error messages', async (t) => {
   const app = buildApp();
   t.after(() => app.close());

@@ -20,6 +20,15 @@ function isValidationFailure(error: unknown): error is ValidationFailure {
     'validation' in error && Array.isArray(error.validation);
 }
 
+/** Stack frames without the leading "Name: message" line, which may carry untrusted text. */
+function stackFrames(error: unknown): string | undefined {
+  if (!(error instanceof Error) || typeof error.stack !== 'string') return undefined;
+  const header = error.message ? `${error.name}: ${error.message}` : error.name;
+  // Fail closed: if the header cannot be stripped reliably, log no stack at all.
+  if (!error.stack.startsWith(header)) return undefined;
+  return error.stack.slice(header.length).replace(/^\n/, '');
+}
+
 /** Pure app factory: no ports, storage services or external connections. */
 export function buildApp(composition: AppComposition = {}): FastifyInstance {
   const app = Fastify({
@@ -63,8 +72,16 @@ export function buildApp(composition: AppComposition = {}): FastifyInstance {
     // standard reason phrase, not "Internal Server Error" for every 5xx.
     const title = STATUS_CODES[status] ?? 'HTTP Error';
     if (status >= 500) {
-      // Do not log raw errors or untrusted message bodies in the public starter.
-      request.log.error({ statusCode: status, requestId: request.id }, 'Request failed');
+      // The error message is never logged (it may carry untrusted input or secrets);
+      // the error name, code and stack frames are logged to make 5xx failures debuggable.
+      request.log.error({
+        statusCode: status, requestId: request.id,
+        errorName: error instanceof Error ? error.name : typeof error,
+        errorCode: error instanceof Error && 'code' in error && typeof error.code === 'string'
+          ? error.code
+          : undefined,
+        stack: stackFrames(error),
+      }, 'Request failed');
     }
     const problem: Record<string, unknown> = {
       type: 'about:blank', title, status, requestId: request.id,
