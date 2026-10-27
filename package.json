@@ -4,25 +4,43 @@
   "private": true,
   "license": "MIT",
   "type": "module",
+  "imports": {
+    "#modules/*": {
+      "types": "./src/modules/*/index.ts",
+      "development": "./src/modules/*/index.ts",
+      "default": "./dist/modules/*/index.js"
+    },
+    "#shared/*": {
+      "types": "./src/shared/*.ts",
+      "development": "./src/shared/*.ts",
+      "default": "./dist/shared/*.js"
+    }
+  },
   "engines": {
     "node": ">=24 <25"
   },
   "packageManager": "pnpm@11.25.0",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "tsc",
-    "test": "pnpm run build && node --test tests/*.test.mjs",
+    "lint": "biome lint",
+    "format": "biome format --write",
+    "check": "biome check",
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "start": "node dist/server.js",
     "dev": "pnpm run build && pnpm run --parallel \"/^dev:/\"",
-    "dev:tsc": "tsc --watch --preserveWatchOutput",
+    "dev:tsc": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
     "dev:server": "node --watch dist/server.js"
   },
   "dependencies": {
     "fastify": "5.12.7"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.3",
     "@types/node": "24.19.2",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "5.0.5"
   },
   "description": "Personal presentation-builder project: initial Fastify backend foundation; not an institutional FALP product."
 }

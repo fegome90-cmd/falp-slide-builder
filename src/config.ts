@@ -4,7 +4,11 @@ export interface ServerConfig {
 }
 
 const allowedHosts = new Set<ServerConfig['host']>([
-  '127.0.0.1', 'localhost', '0.0.0.0', '::1', '::',
+  '127.0.0.1',
+  'localhost',
+  '0.0.0.0',
+  '::1',
+  '::',
 ]);
 
 export function readServerConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
