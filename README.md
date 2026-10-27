@@ -33,7 +33,6 @@ The default address is `http://127.0.0.1:3000`. Check it with `curl http://127.0
 - Keep the loopback default. Binding to `0.0.0.0` or `::` exposes the process beyond loopback; it is not deployment hardening.
 - The template limits request bodies, sanitizes error responses, disables proxy trust, avoids automatic request-URL logs, and redacts sensitive headers. These defaults are not a security certification.
 - Before Internet deployment, independently configure access controls, TLS, proxy trust, traffic limits, and operational monitoring. This PR does not deploy anything.
-- Use synthetic content only. Do not commit patient data, clinical information, internal documents, private branding, credentials, or unlicensed assets.
 - Existing design tokens may be an **optional reference only when their license permits the intended reuse**. Preserve required notices and check code, fonts, imagery, trademarks, and other assets separately. No token package, logo, institutional asset, or font is included or required here. Design reuse does not imply institutional endorsement and is not an approval gate for developing the application.
 
 ## Verification
