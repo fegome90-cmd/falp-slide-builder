@@ -9,6 +9,17 @@ export interface AppComposition {
   afterRoutes?: (app: FastifyInstance) => void;
 }
 
+/** Fastify schema-validation failures carry Ajv errors and the failing part name. */
+interface ValidationFailure {
+  validation: { instancePath: string; message?: string }[];
+  validationContext?: string;
+}
+
+function isValidationFailure(error: unknown): error is ValidationFailure {
+  return typeof error === 'object' && error !== null &&
+    'validation' in error && Array.isArray(error.validation);
+}
+
 /** Pure app factory: no ports, storage services or external connections. */
 export function buildApp(composition: AppComposition = {}): FastifyInstance {
   const app = Fastify({
@@ -55,9 +66,17 @@ export function buildApp(composition: AppComposition = {}): FastifyInstance {
       // Do not log raw errors or untrusted message bodies in the public starter.
       request.log.error({ statusCode: status, requestId: request.id }, 'Request failed');
     }
-    reply.code(status).type('application/problem+json').send({
+    const problem: Record<string, unknown> = {
       type: 'about:blank', title, status, requestId: request.id,
-    });
+    };
+    // Ajv messages are generated from the schema, not from input, so they are safe to return.
+    if (status === 400 && isValidationFailure(error)) {
+      const context = error.validationContext;
+      problem.errors = error.validation.map(item => ({
+        in: context, path: item.instancePath, message: item.message,
+      }));
+    }
+    reply.code(status).type('application/problem+json').send(problem);
   });
   app.setNotFoundHandler((request, reply) => {
     reply.code(404).type('application/problem+json').send({

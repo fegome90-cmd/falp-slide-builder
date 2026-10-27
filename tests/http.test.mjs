@@ -90,6 +90,34 @@ test('status-only 409 errors keep Conflict status without leaking diagnostics', 
   assert.ok(!response.body.includes('PRIVATE_STATUS_ONLY_DIAGNOSTIC'));
 });
 
+test('schema validation 400 lists failing fields without echoing input', async (t) => {
+  const app = buildApp();
+  t.after(() => app.close());
+  app.post('/validated', { schema: { body: { type: 'object', required: ['name'], properties: { name: { type: 'string', maxLength: 3 } } } } }, async () => ({ ok: true }));
+
+  const response = await app.inject({
+    method: 'POST', url: '/validated',
+    headers: { 'content-type': 'application/json' },
+    payload: JSON.stringify({ name: 'SECRET_INPUT_VALUE' }),
+  });
+  assert.equal(response.statusCode, 400);
+  assert.equal(response.headers['content-type'], 'application/problem+json; charset=utf-8');
+  const body = response.json();
+  assert.equal(body.title, 'Bad Request');
+  assert.ok(Array.isArray(body.errors));
+  assert.ok(body.errors.length >= 1);
+  assert.equal(body.errors[0].in, 'body');
+  assert.equal(body.errors[0].path, '/name');
+  assert.ok(!response.body.includes('SECRET_INPUT_VALUE'));
+
+  const missing = await app.inject({
+    method: 'POST', url: '/validated',
+    headers: { 'content-type': 'application/json' }, payload: '{}',
+  });
+  assert.equal(missing.statusCode, 400);
+  assert.ok(/name/.test(JSON.stringify(missing.json().errors)));
+});
+
 for (const signal of ['SIGTERM', 'SIGINT']) {
 test(`compiled JS listens and stops cleanly on ${signal}`, async () => {
   const child = spawn(process.execPath, ['dist/server.js'], {
