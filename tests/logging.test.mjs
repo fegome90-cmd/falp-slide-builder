@@ -14,7 +14,7 @@ test('HTTP query secrets never enter the starter process logs', async () => {
     const timer = setTimeout(() => reject(new Error('listen timeout')), 8000);
     child.stdout.on('data', chunk => {
       stdout += chunk.toString();
-      const match = stdout.match(/KIT_LISTEN (http:\/\/[^\s]+)/);
+      const match = stdout.match(/Server listening at (http:\/\/[^"\s]+)/);
       if (match) { clearTimeout(timer); resolve(match[1]); }
     });
     child.stderr.on('data', chunk => stderr += chunk.toString());

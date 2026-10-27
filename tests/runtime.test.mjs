@@ -104,7 +104,7 @@ await listen(app, { shutdownTimeoutMs: 300 });
       const timer = setTimeout(() => reject(new Error('server timeout: ' + output)), 7000);
       child.stdout.on('data', chunk => {
         output += chunk.toString();
-        if (output.includes('KIT_LISTEN')) { clearTimeout(timer); resolve(); }
+        if (output.includes('Server listening at')) { clearTimeout(timer); resolve(); }
       });
       child.stderr.on('data', chunk => { output += chunk.toString(); });
       child.once('exit', code => { clearTimeout(timer); reject(new Error('early exit: ' + code + output)); });

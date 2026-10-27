@@ -51,7 +51,6 @@ export async function listen(
   process.once('SIGINT', onInterrupt);
   try {
     const address = await app.listen({ host: config.host, port: config.port });
-    console.log('KIT_LISTEN ' + address);
     return address;
   } catch (error) {
     await app.close();

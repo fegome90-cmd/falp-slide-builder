@@ -154,7 +154,7 @@ test(`compiled JS listens and stops cleanly on ${signal}`, async () => {
     const timer = setTimeout(() => reject(new Error('server timeout: ' + output)), 7000);
     child.stdout.on('data', chunk => {
       output += chunk.toString();
-      const match = output.match(/KIT_LISTEN (http:\/\/[^\s]+)/);
+      const match = output.match(/Server listening at (http:\/\/[^"\s]+)/);
       if (match) { clearTimeout(timer); resolve(match[1]); }
     });
     child.stderr.on('data', chunk => { output += chunk.toString(); });
