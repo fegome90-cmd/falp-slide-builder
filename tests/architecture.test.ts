@@ -23,8 +23,10 @@ const SOURCES: Record<string, string> = {
   'src/shared/bad-shared.ts': "import { z } from '#modules/decks'; export const v3 = z;",
   'src/modules/decks/routes/deep-relative.ts':
     "import { w } from '../../health/routes/a.js'; export const v4 = w;",
-  'src/modules/decks/domain/impure.ts':
-    "import Fastify from 'fastify'; import { r } from '../routes/ok-route.js'; export const v5 = [Fastify, r];",
+  'src/modules/decks/domain/impure-fastify.ts':
+    "import Fastify from 'fastify'; export const v5 = Fastify;",
+  'src/modules/decks/domain/impure-routes.ts':
+    "import { r } from '../routes/ok-route.js'; export const v6 = r;",
   'src/modules/decks/domain/BadName.ts': 'export const ok = 1;',
   'src/modules/cyc-a/index.ts': "import { b } from '#modules/cyc-b'; export const a = () => b;",
   'src/modules/cyc-b/index.ts': "import { a } from '#modules/cyc-a'; export const b = () => a;",
@@ -50,7 +52,8 @@ const VIOLATIONS = [
   { file: 'src/server.ts', rule: 'lint/style/noRestrictedImports' },
   { file: 'src/shared/bad-shared.ts', rule: 'lint/style/noRestrictedImports' },
   { file: 'src/modules/decks/routes/deep-relative.ts', rule: 'lint/style/noRestrictedImports' },
-  { file: 'src/modules/decks/domain/impure.ts', rule: 'lint/style/noRestrictedImports' },
+  { file: 'src/modules/decks/domain/impure-fastify.ts', rule: 'lint/style/noRestrictedImports' },
+  { file: 'src/modules/decks/domain/impure-routes.ts', rule: 'lint/style/noRestrictedImports' },
   { file: 'src/modules/decks/domain/BadName.ts', rule: 'lint/style/useFilenamingConvention' },
   { file: 'src/modules/cyc-a/index.ts', rule: 'lint/suspicious/noImportCycles' },
   { file: 'src/modules/cyc-b/index.ts', rule: 'lint/suspicious/noImportCycles' },
