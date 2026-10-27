@@ -11,7 +11,11 @@ test('health, request ID and security headers work without external services', a
   assert.deepEqual(response.json(), { ok: true });
   const uuidV4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
   assert.match(response.headers['x-request-id'], uuidV4);
-  const second = await app.inject({ method: 'GET', url: '/health', headers: { 'x-request-id': 'client-chosen' } });
+  const second = await app.inject({
+    method: 'GET',
+    url: '/health',
+    headers: { 'x-request-id': 'client-chosen' },
+  });
   assert.notEqual(second.headers['x-request-id'], 'client-chosen');
   assert.notEqual(second.headers['x-request-id'], response.headers['x-request-id']);
   assert.equal(response.headers['x-content-type-options'], 'nosniff');
@@ -23,20 +27,25 @@ test('404, malformed JSON 400, body-limit 413 and sanitized 500', async (t) => {
   const app = buildApp();
   t.after(() => app.close());
   app.post('/probe', async (req) => req.body);
-  app.get('/explode', async () => { throw new Error('DO_NOT_LEAK_SECRET'); });
+  app.get('/explode', async () => {
+    throw new Error('DO_NOT_LEAK_SECRET');
+  });
 
   const missing = await app.inject({ method: 'GET', url: '/missing' });
   assert.equal(missing.statusCode, 404);
   assert.equal(missing.headers['content-type'], 'application/problem+json; charset=utf-8');
 
   const malformed = await app.inject({
-    method: 'POST', url: '/probe',
-    headers: { 'content-type': 'application/json' }, payload: '{',
+    method: 'POST',
+    url: '/probe',
+    headers: { 'content-type': 'application/json' },
+    payload: '{',
   });
   assert.equal(malformed.statusCode, 400);
 
   const oversized = await app.inject({
-    method: 'POST', url: '/probe',
+    method: 'POST',
+    url: '/probe',
     headers: { 'content-type': 'application/json' },
     payload: JSON.stringify({ value: 'x'.repeat(1024 * 1024 + 100) }),
   });
@@ -55,13 +64,20 @@ test('5xx logs error type and stack frames but never the message', async (t) => 
   const logged = [];
   app.addHook('onRequest', async (request) => {
     const original = request.log.error.bind(request.log);
-    request.log.error = (obj, msg) => { logged.push(obj); original(obj, msg); };
+    request.log.error = (obj, msg) => {
+      logged.push(obj);
+      original(obj, msg);
+    };
   });
-  app.get('/boom', async () => { const e = new TypeError('LEAKY_MESSAGE line1\nLEAKY_LINE2'); e.code = 'E_TEST'; throw e; });
+  app.get('/boom', async () => {
+    const e = new TypeError('LEAKY_MESSAGE line1\nLEAKY_LINE2');
+    e.code = 'E_TEST';
+    throw e;
+  });
 
   const response = await app.inject({ method: 'GET', url: '/boom' });
   assert.equal(response.statusCode, 500);
-  const entry = logged.find(obj => obj.statusCode === 500);
+  const entry = logged.find((obj) => obj.statusCode === 500);
   assert.ok(entry);
   assert.equal(entry.errorName, 'TypeError');
   assert.equal(entry.errorCode, 'E_TEST');
@@ -81,7 +97,10 @@ test('Problem Details titles reflect 403 and 502 without leaking error messages'
       throw error;
     });
   }
-  for (const [status, title] of [[403, 'Forbidden'], [502, 'Bad Gateway']]) {
+  for (const [status, title] of [
+    [403, 'Forbidden'],
+    [502, 'Bad Gateway'],
+  ]) {
     const response = await app.inject({ method: 'GET', url: '/status-' + status });
     assert.equal(response.statusCode, status);
     assert.equal(response.headers['content-type'], 'application/problem+json; charset=utf-8');
@@ -92,7 +111,6 @@ test('Problem Details titles reflect 403 and 502 without leaking error messages'
     assert.ok(!response.body.includes('PRIVATE_DIAGNOSTIC_MESSAGE'));
   }
 });
-
 
 test('status-only 409 errors keep Conflict status without leaking diagnostics', async (t) => {
   const app = buildApp();
@@ -118,10 +136,23 @@ test('status-only 409 errors keep Conflict status without leaking diagnostics', 
 test('schema validation 400 lists failing fields without echoing input', async (t) => {
   const app = buildApp();
   t.after(() => app.close());
-  app.post('/validated', { schema: { body: { type: 'object', required: ['name'], properties: { name: { type: 'string', maxLength: 3 } } } } }, async () => ({ ok: true }));
+  app.post(
+    '/validated',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['name'],
+          properties: { name: { type: 'string', maxLength: 3 } },
+        },
+      },
+    },
+    async () => ({ ok: true }),
+  );
 
   const response = await app.inject({
-    method: 'POST', url: '/validated',
+    method: 'POST',
+    url: '/validated',
     headers: { 'content-type': 'application/json' },
     payload: JSON.stringify({ name: 'SECRET_INPUT_VALUE' }),
   });
@@ -136,41 +167,54 @@ test('schema validation 400 lists failing fields without echoing input', async (
   assert.ok(!response.body.includes('SECRET_INPUT_VALUE'));
 
   const missing = await app.inject({
-    method: 'POST', url: '/validated',
-    headers: { 'content-type': 'application/json' }, payload: '{}',
+    method: 'POST',
+    url: '/validated',
+    headers: { 'content-type': 'application/json' },
+    payload: '{}',
   });
   assert.equal(missing.statusCode, 400);
   assert.ok(/name/.test(JSON.stringify(missing.json().errors)));
 });
 
 for (const signal of ['SIGTERM', 'SIGINT']) {
-test(`compiled JS listens and stops cleanly on ${signal}`, async () => {
-  const child = spawn(process.execPath, ['dist/server.js'], {
-    env: { ...process.env, PORT: '0', HOST: '127.0.0.1' },
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
-  let output = '';
-  const ready = new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('server timeout: ' + output)), 7000);
-    child.stdout.on('data', chunk => {
-      output += chunk.toString();
-      const match = output.match(/Server listening at (http:\/\/[^"\s]+)/);
-      if (match) { clearTimeout(timer); resolve(match[1]); }
+  test(`compiled JS listens and stops cleanly on ${signal}`, async () => {
+    const child = spawn(process.execPath, ['dist/server.js'], {
+      env: { ...process.env, PORT: '0', HOST: '127.0.0.1' },
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
-    child.stderr.on('data', chunk => { output += chunk.toString(); });
-    child.once('exit', code => { clearTimeout(timer); reject(new Error('early exit: ' + code + output)); });
-  });
-  try {
-    const url = await ready;
-    const response = await fetch(url + '/health');
-    assert.equal(response.status, 200);
-  } finally {
-    if (child.exitCode === null) {
-      const exit = new Promise(resolve => child.once('exit', resolve));
-      child.kill(signal);
-      const code = await Promise.race([exit, new Promise((_, reject) => setTimeout(() => reject(new Error('SIGTERM timeout')), 7000))]);
-      assert.equal(code, 0);
+    let output = '';
+    const ready = new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('server timeout: ' + output)), 7000);
+      child.stdout.on('data', (chunk) => {
+        output += chunk.toString();
+        const match = output.match(/Server listening at (http:\/\/[^"\s]+)/);
+        if (match) {
+          clearTimeout(timer);
+          resolve(match[1]);
+        }
+      });
+      child.stderr.on('data', (chunk) => {
+        output += chunk.toString();
+      });
+      child.once('exit', (code) => {
+        clearTimeout(timer);
+        reject(new Error('early exit: ' + code + output));
+      });
+    });
+    try {
+      const url = await ready;
+      const response = await fetch(url + '/health');
+      assert.equal(response.status, 200);
+    } finally {
+      if (child.exitCode === null) {
+        const exit = new Promise((resolve) => child.once('exit', resolve));
+        child.kill(signal);
+        const code = await Promise.race([
+          exit,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('SIGTERM timeout')), 7000)),
+        ]);
+        assert.equal(code, 0);
+      }
     }
-  }
-});
+  });
 }

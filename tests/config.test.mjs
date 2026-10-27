@@ -7,8 +7,7 @@ test('defaults bind only to localhost', () => {
 });
 
 test('explicit supported host and ephemeral port are accepted', () => {
-  assert.deepEqual(readServerConfig({ HOST: '0.0.0.0', PORT: '0' }),
-    { host: '0.0.0.0', port: 0 });
+  assert.deepEqual(readServerConfig({ HOST: '0.0.0.0', PORT: '0' }), { host: '0.0.0.0', port: 0 });
 });
 
 test('invalid ports and hosts fail closed', () => {

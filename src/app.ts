@@ -17,8 +17,12 @@ interface ValidationFailure {
 }
 
 function isValidationFailure(error: unknown): error is ValidationFailure {
-  return typeof error === 'object' && error !== null &&
-    'validation' in error && Array.isArray(error.validation);
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'validation' in error &&
+    Array.isArray(error.validation)
+  );
 }
 
 /** Stack frames without the leading "Name: message" line, which may carry untrusted text. */
@@ -36,11 +40,7 @@ export function buildApp(composition: AppComposition = {}): FastifyInstance {
     logger: {
       level: 'info',
       redact: {
-        paths: [
-          'req.headers.authorization',
-          'req.headers.cookie',
-          'res.headers["set-cookie"]',
-        ],
+        paths: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]'],
         censor: '[REDACTED]',
       },
     },
@@ -64,43 +64,56 @@ export function buildApp(composition: AppComposition = {}): FastifyInstance {
 
   app.setErrorHandler((error, request, reply) => {
     // Match Fastify's statusCode || status precedence for thrown errors.
-    const candidate = typeof error === 'object' && error !== null
-      ? (('statusCode' in error ? error.statusCode : undefined) ||
-          ('status' in error ? error.status : undefined))
-      : undefined;
-    const status = typeof candidate === 'number' && candidate >= 400 && candidate < 600
-      ? candidate
-      : 500;
+    const candidate =
+      typeof error === 'object' && error !== null
+        ? ('statusCode' in error ? error.statusCode : undefined) ||
+          ('status' in error ? error.status : undefined)
+        : undefined;
+    const status =
+      typeof candidate === 'number' && candidate >= 400 && candidate < 600 ? candidate : 500;
     // RFC 9457 'about:blank' titles should match the HTTP status's
     // standard reason phrase, not "Internal Server Error" for every 5xx.
     const title = STATUS_CODES[status] ?? 'HTTP Error';
     if (status >= 500) {
       // The error message is never logged (it may carry untrusted input or secrets);
       // the error name, code and stack frames are logged to make 5xx failures debuggable.
-      request.log.error({
-        statusCode: status, requestId: request.id,
-        errorName: error instanceof Error ? error.name : typeof error,
-        errorCode: error instanceof Error && 'code' in error && typeof error.code === 'string'
-          ? error.code
-          : undefined,
-        stack: stackFrames(error),
-      }, 'Request failed');
+      request.log.error(
+        {
+          statusCode: status,
+          requestId: request.id,
+          errorName: error instanceof Error ? error.name : typeof error,
+          errorCode:
+            error instanceof Error && 'code' in error && typeof error.code === 'string'
+              ? error.code
+              : undefined,
+          stack: stackFrames(error),
+        },
+        'Request failed',
+      );
     }
     const problem: Record<string, unknown> = {
-      type: 'about:blank', title, status, requestId: request.id,
+      type: 'about:blank',
+      title,
+      status,
+      requestId: request.id,
     };
     // Ajv messages are generated from the schema, not from input, so they are safe to return.
     if (status === 400 && isValidationFailure(error)) {
       const context = error.validationContext;
-      problem.errors = error.validation.map(item => ({
-        in: context, path: item.instancePath, message: item.message,
+      problem.errors = error.validation.map((item) => ({
+        in: context,
+        path: item.instancePath,
+        message: item.message,
       }));
     }
     reply.code(status).type('application/problem+json').send(problem);
   });
   app.setNotFoundHandler((request, reply) => {
     reply.code(404).type('application/problem+json').send({
-      type: 'about:blank', title: 'Not Found', status: 404, requestId: request.id,
+      type: 'about:blank',
+      title: 'Not Found',
+      status: 404,
+      requestId: request.id,
     });
   });
 

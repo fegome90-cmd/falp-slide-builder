@@ -38,8 +38,12 @@ export async function listen(
     }
   }
 
-  const onTerminate = (): void => { void shutdown(); };
-  const onInterrupt = (): void => { void shutdown(); };
+  const onTerminate = (): void => {
+    void shutdown();
+  };
+  const onInterrupt = (): void => {
+    void shutdown();
+  };
 
   // Remove the process-global handlers even if an embedding caller closes the
   // server directly; otherwise repeat startup/tests retain stale listeners.

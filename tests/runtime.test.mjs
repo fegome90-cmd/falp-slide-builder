@@ -42,7 +42,9 @@ test('invalid server configuration triggers plugin teardown and adds no signal h
   const interrupt = process.listenerCount('SIGINT');
   const app = buildApp();
   let cleaned = 0;
-  app.addHook('onClose', async () => { cleaned += 1; });
+  app.addHook('onClose', async () => {
+    cleaned += 1;
+  });
   try {
     process.env.PORT = 'invalid';
     await assert.rejects(listen(app), /PORT/);
@@ -58,7 +60,7 @@ test('invalid server configuration triggers plugin teardown and adds no signal h
 test('occupied TCP port fails cleanly without leaking shutdown listeners', async () => {
   const { createServer } = await import('node:net');
   const blocker = createServer();
-  await new Promise(resolve => blocker.listen(0, '127.0.0.1', resolve));
+  await new Promise((resolve) => blocker.listen(0, '127.0.0.1', resolve));
   const occupiedPort = blocker.address().port;
   const originalPort = process.env.PORT;
   const originalHost = process.env.HOST;
@@ -66,7 +68,9 @@ test('occupied TCP port fails cleanly without leaking shutdown listeners', async
   const intCount = process.listenerCount('SIGINT');
   const app = buildApp();
   let closed = 0;
-  app.addHook('onClose', async () => { closed += 1; });
+  app.addHook('onClose', async () => {
+    closed += 1;
+  });
   try {
     process.env.PORT = String(occupiedPort);
     process.env.HOST = '127.0.0.1';
@@ -76,7 +80,7 @@ test('occupied TCP port fails cleanly without leaking shutdown listeners', async
     assert.equal(process.listenerCount('SIGINT'), intCount);
   } finally {
     await app.close();
-    await new Promise(resolve => blocker.close(resolve));
+    await new Promise((resolve) => blocker.close(resolve));
     restoreEnv('PORT', originalPort);
     restoreEnv('HOST', originalHost);
   }
@@ -88,13 +92,16 @@ test('a hung close is force-exited with code 1 after the shutdown timeout', asyn
     const appUrl = new URL('../dist/app.js', import.meta.url).href;
     const runtimeUrl = new URL('../dist/runtime.js', import.meta.url).href;
     const script = path.join(dir, 'hung-close.mjs');
-    fs.writeFileSync(script, `import { buildApp } from '${appUrl}';
+    fs.writeFileSync(
+      script,
+      `import { buildApp } from '${appUrl}';
 import { listen } from '${runtimeUrl}';
 const app = buildApp();
 // An open handle plus a never-settling hook simulates a hung plugin teardown.
 app.addHook('onClose', () => new Promise(() => { setInterval(() => {}, 1000); }));
 await listen(app, { shutdownTimeoutMs: 300 });
-`);
+`,
+    );
     const child = spawn(process.execPath, [script], {
       env: { ...process.env, PORT: '0', HOST: '127.0.0.1' },
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -102,21 +109,31 @@ await listen(app, { shutdownTimeoutMs: 300 });
     let output = '';
     const ready = new Promise((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error('server timeout: ' + output)), 7000);
-      child.stdout.on('data', chunk => {
+      child.stdout.on('data', (chunk) => {
         output += chunk.toString();
-        if (output.includes('Server listening at')) { clearTimeout(timer); resolve(); }
+        if (output.includes('Server listening at')) {
+          clearTimeout(timer);
+          resolve();
+        }
       });
-      child.stderr.on('data', chunk => { output += chunk.toString(); });
-      child.once('exit', code => { clearTimeout(timer); reject(new Error('early exit: ' + code + output)); });
+      child.stderr.on('data', (chunk) => {
+        output += chunk.toString();
+      });
+      child.once('exit', (code) => {
+        clearTimeout(timer);
+        reject(new Error('early exit: ' + code + output));
+      });
     });
     try {
       await ready;
-      const exit = new Promise(resolve => child.once('exit', resolve));
+      const exit = new Promise((resolve) => child.once('exit', resolve));
       child.kill('SIGTERM');
       let forceTimer;
       const code = await Promise.race([
         exit,
-        new Promise((_, reject) => { forceTimer = setTimeout(() => reject(new Error('force exit timeout')), 5000); }),
+        new Promise((_, reject) => {
+          forceTimer = setTimeout(() => reject(new Error('force exit timeout')), 5000);
+        }),
       ]);
       clearTimeout(forceTimer);
       assert.equal(code, 1);
