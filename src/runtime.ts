@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { readServerConfig } from './config.js';
+import { readServerConfig, type ServerConfig } from './config.js';
 
 export const DEFAULT_SHUTDOWN_TIMEOUT_MS = 10_000;
 
@@ -11,7 +11,7 @@ export async function listen(
   const shutdownTimeoutMs = options.shutdownTimeoutMs ?? DEFAULT_SHUTDOWN_TIMEOUT_MS;
 
   // Invalid configuration must release registered plugins and resources too.
-  let config;
+  let config: ServerConfig;
   try {
     config = readServerConfig();
   } catch (error) {
