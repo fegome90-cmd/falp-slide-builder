@@ -33,9 +33,13 @@ jobs:
           test "$(pnpm --version)" = "11.25.0"
       - name: Install locked dependencies without lifecycle scripts
         run: corepack pnpm install --frozen-lockfile --ignore-scripts
+      - name: Lint, format and architecture rules (Biome)
+        run: corepack pnpm exec biome ci
       - name: Type check
         run: corepack pnpm typecheck
-      - name: Build and test
+      - name: Build
+        run: corepack pnpm build
+      - name: Test (Vitest)
         run: corepack pnpm test
 
   audit:
