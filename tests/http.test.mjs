@@ -9,7 +9,11 @@ test('health, request ID and security headers work without external services', a
   const response = await app.inject({ method: 'GET', url: '/health' });
   assert.equal(response.statusCode, 200);
   assert.deepEqual(response.json(), { ok: true });
-  assert.ok(response.headers['x-request-id']);
+  const uuidV4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+  assert.match(response.headers['x-request-id'], uuidV4);
+  const second = await app.inject({ method: 'GET', url: '/health', headers: { 'x-request-id': 'client-chosen' } });
+  assert.notEqual(second.headers['x-request-id'], 'client-chosen');
+  assert.notEqual(second.headers['x-request-id'], response.headers['x-request-id']);
   assert.equal(response.headers['x-content-type-options'], 'nosniff');
   assert.equal(response.headers['referrer-policy'], 'no-referrer');
   assert.equal(response.headers['access-control-allow-origin'], undefined);

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { STATUS_CODES } from 'node:http';
 import Fastify, { LogController, type FastifyInstance } from 'fastify';
 import { healthPlugin } from './plugins/health.js';
@@ -48,6 +49,8 @@ export function buildApp(composition: AppComposition = {}): FastifyInstance {
     // Use Fastify's supported controller API, not deprecated top-level options.
     logController: new LogController({ disableRequestLogging: true }),
     trustProxy: false,
+    // Unique across restarts and instances; client-supplied IDs stay ignored.
+    genReqId: () => randomUUID(),
   });
 
   app.addHook('onRequest', async (request, reply) => {
