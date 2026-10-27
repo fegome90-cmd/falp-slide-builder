@@ -15,6 +15,7 @@ Requirements: **Node.js 24** (`>=24 <25`) and **pnpm 11.25.0**, pinned in `packa
 ```sh
 corepack enable
 pnpm install --frozen-lockfile --ignore-scripts
+pnpm check
 pnpm typecheck
 pnpm test
 pnpm start
@@ -22,11 +23,15 @@ pnpm start
 
 `corepack enable` installs shims alongside Corepack. To avoid changing an existing installation, use `corepack enable --install-directory <writable-directory>` and prepend that directory to `PATH`. Verify `pnpm --version` reports `11.25.0` from the project directory.
 
-`test` builds the project before running its tests, so `start` has compiled files available. After installation, a build without tests is `pnpm build`; development mode is `pnpm dev`, which recompiles TypeScript and restarts the server when files change.
+`pnpm check` runs Biome (formatting, lint and architecture rules) without writing files. `pnpm lint` runs only the linter, and `pnpm format` rewrites files with the formatter. `pnpm test` runs the Vitest suite. Its global setup compiles `dist/` first, because the process-level tests start `dist/server.js`; `pnpm start` needs that build too, so run `pnpm build` first if you have not run the tests. Development mode is `pnpm dev`, which recompiles TypeScript and restarts the server when files change.
 
 The default address is `http://127.0.0.1:3000`. Check it with `curl http://127.0.0.1:3000/health`. Optional environment variables are `PORT` (an integer from 0 to 65535) and `HOST` (`127.0.0.1`, `localhost`, `0.0.0.0`, `::1`, or `::`). Use a fixed nonzero port for the example URL; port `0` requests an automatically allocated port.
 
 `/health` only reports that the HTTP process responds. It does not check databases, external services, or production readiness. `buildApp()` creates the app without opening a port. Register future plugins through the existing `beforeRoutes → routes → afterRoutes` composition boundary; keep resource cleanup in the existing lifecycle helpers.
+
+## Working with coding agents
+
+Coding agents should read [AGENTS.md](AGENTS.md) first, then [ARCHITECTURE.md](ARCHITECTURE.md) before creating files, adding modules or adding dependencies.
 
 ## Safety and optional design references
 
@@ -37,6 +42,6 @@ The default address is `http://127.0.0.1:3000`. Check it with `curl http://127.0
 
 ## Verification
 
-The blocking `verify` job runs on pushes to `main` and on pull requests. It performs a frozen dependency installation without lifecycle scripts, type checking, and the build and test suite (`pnpm test`) on Node.js 24. A separate `audit` job runs a production dependency audit on pull requests, pushes to `main`, and weekly; it is non-blocking, so its findings do not fail CI. The lockfile includes only the transitive security patches documented in [UPSTREAM.md](UPSTREAM.md). No end-to-end presentation export, external-provider integration, clinical validation, or production deployment has been established by this bootstrap.
+The blocking `verify` job runs on pushes to `main` and on pull requests, on Node.js 24. It performs a frozen dependency installation without lifecycle scripts, then runs Biome (`biome ci`: formatting, lint and architecture rules), type checking, the build, and the Vitest suite (`pnpm test`) as separate steps. A separate `audit` job runs a production dependency audit on pull requests, pushes to `main`, and weekly; it is non-blocking, so its findings do not fail CI. The lockfile includes only the transitive security patches documented in [UPSTREAM.md](UPSTREAM.md). No end-to-end presentation export, external-provider integration, clinical validation, or production deployment has been established by this bootstrap.
 
 The npm package is deliberately `private: true`; the GitHub repository can still be public. The project is licensed under the [MIT License](LICENSE); the exact import boundary is recorded in [UPSTREAM.md](UPSTREAM.md).
