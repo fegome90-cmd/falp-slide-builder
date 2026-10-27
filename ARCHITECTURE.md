@@ -1,6 +1,6 @@
 # Architecture
 
-This file records the structure, request flows and library decisions. Rules are enforced by `biome.json` and `tests/architecture.test.ts`; the [enforcement table](#enforcement) shows where each one lives.
+This file records the structure, request flows and library decisions. Rules are enforced by `biome.json`, `tests/architecture.test.ts` and `tests/dependency-allowlist.test.ts`; the [enforcement table](#enforcement) shows where each one lives.
 
 ## Layers and modules
 
@@ -62,6 +62,16 @@ TypeScript and Vitest read the source directly, so tests need no prior build. Th
 | Formatting | `biome.json` formatter settings, checked by `pnpm check` and `biome ci` |
 | Each lint rule above still fires on a violating fixture; allowed fixtures stay clean | `tests/architecture.test.ts` (canary) |
 | `#modules` alias resolves to `src/` under Vitest | `tests/architecture.test.ts` |
+| Prohibited imports (HTTP clients, test runners, HTTP servers) | `biome.json` `style/noRestrictedImports` paths, checked per zone by `tests/architecture.test.ts` |
+| Every direct dependency is registered with an allowed status; prohibited, removed or undecided packages are not installed | `tests/dependency-allowlist.test.ts` |
+
+## Quality gates
+
+- **Gate 1, automated, blocking in CI:** Biome (`biome ci`), type checking, build and Vitest, including the architecture canary (`tests/architecture.test.ts`) and the dependency allowlist (`tests/dependency-allowlist.test.ts`).
+- **Gate 2, semantic architecture review:** checks a change against this file. Not automated yet; tracked in [BACKLOG.md](BACKLOG.md).
+- **Gate 3, human review by the project owner:** required for new dependencies and for changes to prohibitions.
+
+Downward shift: when Gate 3 finds a problem, first try to encode it in Gate 1, as a Biome rule or a test. If it needs judgment, record it in this file for Gate 2 to check.
 
 ## Flows
 
@@ -80,21 +90,58 @@ None of these steps exist yet. When a change touches deck structures, run the te
 
 ## Library lifecycle
 
-Statuses: Actively used, Used but not everywhere, Newly added, Migrating from, Deprecated, To be decided.
+The table below is the single source of truth for dependencies. `tests/dependency-allowlist.test.ts` parses it and checks it against `package.json`. The Package column lists exact npm names in backticks; `—` means the row is not an npm package. Versions are not recorded here; `package.json` and the lockfile hold them.
 
-| Library | Status | Scope / note |
-| --- | --- | --- |
-| Fastify 5 | Actively used | HTTP server. |
-| TypeScript 5 | Actively used | Strict type checking (`pnpm typecheck`) and compilation to `dist/` (`pnpm build`). |
-| Biome 2 | Newly added | Formatter, linter and architecture rules. Replaces nothing. |
-| Vitest 5 | Newly added | Test runner. Replaces `node:test`. |
-| Node native `fetch` | Actively used | Outbound HTTP when needed; the tests already use it against the local server. Do not add axios or similar. |
-| Frontend framework | To be decided | Not chosen; no code depends on it. |
-| UI component library | To be decided | Not chosen. `fegome90-cmd/ui-kit` is a candidate, subject to license review. |
-| AI provider SDK | To be decided | Not chosen; no code depends on it. |
-| PPTX library | To be decided | Not chosen; no code depends on it. |
-| Persistence | To be decided | Not chosen; no code depends on it. |
+### Statuses
+
+- **Actively used**: installed and used by the code.
+- **Used but not everywhere**: installed and used, but not yet in every place the role applies; the note says what is left.
+- **Newly added**: installed recently; the note says what it replaces.
+- **Migrating from**: still installed while the code moves to the replacement named in the note.
+- **Deprecated**: still installed while it is being removed; it may already be absent from `package.json`.
+- **To be decided**: no choice has been made for this role. The package is not prohibited, but it must not be installed until a decision is recorded.
+- **Prohibited**: an adopted replacement already covers the same role, so the package must not be installed or imported. A prohibition needs a verifiable reason.
+- **Removed**: used before and then discarded; the row stays as history, and the package must not be installed.
+
+A package is prohibited only when an adopted replacement already covers the same role and there is a verifiable reason. A new need can reopen the decision, with evidence.
+
+### Packages
+
+| Package | Role | Status | Replacement / note |
+| --- | --- | --- | --- |
+| `fastify` | HTTP server | Actively used | The only HTTP server; see Decisions. |
+| `typescript` | Type checking and build | Actively used | `pnpm typecheck`; `pnpm build` compiles to `dist/`. |
+| `@types/node` | Node.js type definitions | Actively used | Types for the Node 24 APIs in use. |
+| `@biomejs/biome` | Formatter, linter and architecture rules | Newly added | Replaces ESLint and Prettier. |
+| `vitest` | Test runner | Newly added | Replaces the built-in `node:test`. |
+| — | HTTP calls | Actively used | Native `fetch` for outbound HTTP. |
+| `axios`, `node-fetch`, `got`, `superagent` | HTTP client | Prohibited | Native `fetch`. |
+| `jest`, `mocha` | Test runner | Prohibited | Vitest. The built-in `node:test` is also prohibited; see the Removed row. |
+| `express`, `koa`, `hapi`, `@hapi/hapi` | HTTP server | Prohibited | Fastify. |
+| `eslint`, `prettier` | Lint and format | Prohibited | Biome. |
+| — | Test runner, built-in `node:test` | Removed | Replaced by Vitest; reasons under Removed or replaced. |
+| `lodash` | Utility functions | To be decided | Prefer native JavaScript. Add it only for a real need that native code does not meet cleanly, with the justification recorded in Decisions. |
+| `moment` | Dates and times | To be decided | Use `Date` and `Intl` when they are sufficient. Do not assume equivalence for complex temporal operations. `Temporal` is not an unconditional native replacement on Node 24 because it needs explicit enabling. |
+| `dotenv` | Environment files | To be decided | Do not add it now. If env files are needed, prefer `node --env-file`, stable in Node 24. |
+| — | Frontend framework | To be decided | Not chosen; no code depends on it. Decided with the UI library and Playwright when the frontend item starts. |
+| — | UI component library | To be decided | Not chosen. `fegome90-cmd/ui-kit` is a candidate, subject to license review. |
+| — | AI provider SDK | To be decided | Not chosen; needed by the AI generation module. |
+| — | PPTX library | To be decided | Not chosen; needed by the PPTX export module. |
+| — | Persistence | To be decided | Not chosen; the decks slice starts in memory. |
+| `@playwright/test` | End-to-end tests for the frontend | To be decided | Adopted together with the frontend framework. |
 
 ### Removed or replaced
 
 - `node:test` → Vitest. Reasons: TypeScript tests that import `src/`, watch mode (`pnpm test:watch`), and a toolchain consistent with Biome.
+
+## Decisions
+
+This section is append-only: each decision adds one dated line. Changing a prohibition updates the table, `biome.json` and the architecture canary (`tests/architecture.test.ts`) in the same PR.
+
+- 2026-10-27: Biome replaces ESLint and Prettier; `eslint` and `prettier` are prohibited.
+- 2026-10-27: Vitest replaces the built-in `node:test`, which is removed; `jest` and `mocha` are prohibited.
+- 2026-10-27: Native `fetch` is the HTTP client; `axios`, `node-fetch`, `got` and `superagent` are prohibited.
+- 2026-10-27: Fastify is the only HTTP server; `express`, `koa`, `hapi` and `@hapi/hapi` are prohibited.
+- 2026-10-27: `lodash`, `moment` and `dotenv` stay To be decided, with their criteria in the table. They are not added until a concrete need and a dated decision line exist.
+- 2026-10-27: The dependency allowlist is enforced by `tests/dependency-allowlist.test.ts`: every declared package must be registered with an installable status, and no prohibited, removed or undecided package is installed.
+- 2026-10-27: dependency-cruiser and eslint-plugin-boundaries are not used. Biome rules and the architecture canary already cover import cycles, public entries and layer direction, so these tools would duplicate that role. A need outside that role can reopen this.

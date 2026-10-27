@@ -21,5 +21,6 @@ pnpm check && pnpm typecheck && pnpm test
 - When structure, flows or library status change, update ARCHITECTURE.md and BACKLOG.md in the same change.
 - Never weaken a Biome rule or the architecture canary test to get green.
 - Keep agent session logs, prompts and chat transcripts out of the repository.
+- Do not add, remove or replace a dependency without an explicit decision from the project owner, recorded in ARCHITECTURE.md (Decisions and Library lifecycle). CI checks that package.json and the table agree; it does not authorize the change.
 
-Architecture rules live in `biome.json`, not in this file. The canary test in `tests/architecture.test.ts` checks that they still work.
+Architecture rules and prohibited libraries live in `biome.json`, not in this file. The canary test in `tests/architecture.test.ts` checks that the rules still work; `tests/dependency-allowlist.test.ts` checks that installed packages match the library table.
