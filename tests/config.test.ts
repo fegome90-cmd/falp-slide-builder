@@ -1,6 +1,6 @@
-import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readServerConfig } from '../dist/config.js';
+import { test } from 'vitest';
+import { readServerConfig } from '../src/config.js';
 
 test('defaults bind only to localhost', () => {
   assert.deepEqual(readServerConfig({}), { host: '127.0.0.1', port: 3000 });

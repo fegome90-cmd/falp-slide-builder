@@ -1,6 +1,6 @@
-import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import { test } from 'vitest';
 
 test('HTTP query secrets never enter the starter process logs', async () => {
   const secret = 'CANARY_DO_NOT_LOG_849312';
@@ -10,7 +10,7 @@ test('HTTP query secrets never enter the starter process logs', async () => {
   });
   let stdout = '';
   let stderr = '';
-  const ready = new Promise((resolve, reject) => {
+  const ready = new Promise<string>((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('listen timeout')), 8000);
     child.stdout.on('data', (chunk) => {
       stdout += chunk.toString();
@@ -27,14 +27,14 @@ test('HTTP query secrets never enter the starter process logs', async () => {
     });
     child.once('exit', (code) => {
       clearTimeout(timer);
-      reject(new Error('early exit ' + code));
+      reject(new Error(`early exit ${code}`));
     });
   });
   try {
     const url = await ready;
-    const query = '?access_token=' + encodeURIComponent(secret);
-    assert.equal((await fetch(url + '/health' + query)).status, 200);
-    assert.equal((await fetch(url + '/nonexistent' + query)).status, 404);
+    const query = `?access_token=${encodeURIComponent(secret)}`;
+    assert.equal((await fetch(`${url}/health${query}`)).status, 200);
+    assert.equal((await fetch(`${url}/nonexistent${query}`)).status, 404);
     // Allow stdout logging to flush before shutdown.
     await new Promise((resolve) => setTimeout(resolve, 120));
   } finally {

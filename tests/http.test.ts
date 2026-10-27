@@ -1,16 +1,16 @@
-import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { buildApp } from '../dist/app.js';
+import { onTestFinished, test } from 'vitest';
+import { buildApp } from '../src/app.js';
 
-test('health, request ID and security headers work without external services', async (t) => {
+test('health, request ID and security headers work without external services', async () => {
   const app = buildApp();
-  t.after(() => app.close());
+  onTestFinished(() => app.close());
   const response = await app.inject({ method: 'GET', url: '/health' });
   assert.equal(response.statusCode, 200);
   assert.deepEqual(response.json(), { ok: true });
   const uuidV4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-  assert.match(response.headers['x-request-id'], uuidV4);
+  assert.match(response.headers['x-request-id'] as string, uuidV4);
   const second = await app.inject({
     method: 'GET',
     url: '/health',
@@ -23,9 +23,9 @@ test('health, request ID and security headers work without external services', a
   assert.equal(response.headers['access-control-allow-origin'], undefined);
 });
 
-test('404, malformed JSON 400, body-limit 413 and sanitized 500', async (t) => {
+test('404, malformed JSON 400, body-limit 413 and sanitized 500', async () => {
   const app = buildApp();
-  t.after(() => app.close());
+  onTestFinished(() => app.close());
   app.post('/probe', async (req) => req.body);
   app.get('/explode', async () => {
     throw new Error('DO_NOT_LEAK_SECRET');
@@ -58,21 +58,20 @@ test('404, malformed JSON 400, body-limit 413 and sanitized 500', async (t) => {
   assert.equal(failed.json().status, 500);
 });
 
-test('5xx logs error type and stack frames but never the message', async (t) => {
+test('5xx logs error type and stack frames but never the message', async () => {
   const app = buildApp();
-  t.after(() => app.close());
-  const logged = [];
+  onTestFinished(() => app.close());
+  const logged: Record<string, unknown>[] = [];
   app.addHook('onRequest', async (request) => {
     const original = request.log.error.bind(request.log);
-    request.log.error = (obj, msg) => {
+    // Narrow cast: LogFn's overloads cannot be reassigned with a plain (obj, msg) arrow.
+    request.log.error = ((obj: Record<string, unknown>, msg?: string) => {
       logged.push(obj);
       original(obj, msg);
-    };
+    }) as typeof request.log.error;
   });
   app.get('/boom', async () => {
-    const e = new TypeError('LEAKY_MESSAGE line1\nLEAKY_LINE2');
-    e.code = 'E_TEST';
-    throw e;
+    throw Object.assign(new TypeError('LEAKY_MESSAGE line1\nLEAKY_LINE2'), { code: 'E_TEST' });
   });
 
   const response = await app.inject({ method: 'GET', url: '/boom' });
@@ -82,26 +81,24 @@ test('5xx logs error type and stack frames but never the message', async (t) => 
   assert.equal(entry.errorName, 'TypeError');
   assert.equal(entry.errorCode, 'E_TEST');
   assert.equal(typeof entry.stack, 'string');
-  assert.ok(entry.stack.includes('at '));
+  assert.ok((entry.stack as string).includes('at '));
   assert.ok(!JSON.stringify(logged).includes('LEAKY'));
 });
 
-test('Problem Details titles reflect 403 and 502 without leaking error messages', async (t) => {
+test('Problem Details titles reflect 403 and 502 without leaking error messages', async () => {
   const app = buildApp();
-  t.after(() => app.close());
+  onTestFinished(() => app.close());
   // Register every route before the first inject() finalizes Fastify's graph.
   for (const status of [403, 502]) {
-    app.get('/status-' + status, async () => {
-      const error = new Error('PRIVATE_DIAGNOSTIC_MESSAGE');
-      error.statusCode = status;
-      throw error;
+    app.get(`/status-${status}`, async () => {
+      throw Object.assign(new Error('PRIVATE_DIAGNOSTIC_MESSAGE'), { statusCode: status });
     });
   }
   for (const [status, title] of [
     [403, 'Forbidden'],
     [502, 'Bad Gateway'],
   ]) {
-    const response = await app.inject({ method: 'GET', url: '/status-' + status });
+    const response = await app.inject({ method: 'GET', url: `/status-${status}` });
     assert.equal(response.statusCode, status);
     assert.equal(response.headers['content-type'], 'application/problem+json; charset=utf-8');
     const body = response.json();
@@ -112,13 +109,11 @@ test('Problem Details titles reflect 403 and 502 without leaking error messages'
   }
 });
 
-test('status-only 409 errors keep Conflict status without leaking diagnostics', async (t) => {
+test('status-only 409 errors keep Conflict status without leaking diagnostics', async () => {
   const app = buildApp();
-  t.after(() => app.close());
+  onTestFinished(() => app.close());
   app.get('/status-only', async () => {
-    const error = new Error('PRIVATE_STATUS_ONLY_DIAGNOSTIC');
-    error.status = 409;
-    throw error;
+    throw Object.assign(new Error('PRIVATE_STATUS_ONLY_DIAGNOSTIC'), { status: 409 });
   });
 
   const response = await app.inject({ method: 'GET', url: '/status-only' });
@@ -133,9 +128,9 @@ test('status-only 409 errors keep Conflict status without leaking diagnostics', 
   assert.ok(!response.body.includes('PRIVATE_STATUS_ONLY_DIAGNOSTIC'));
 });
 
-test('schema validation 400 lists failing fields without echoing input', async (t) => {
+test('schema validation 400 lists failing fields without echoing input', async () => {
   const app = buildApp();
-  t.after(() => app.close());
+  onTestFinished(() => app.close());
   app.post(
     '/validated',
     {
@@ -176,15 +171,15 @@ test('schema validation 400 lists failing fields without echoing input', async (
   assert.ok(/name/.test(JSON.stringify(missing.json().errors)));
 });
 
-for (const signal of ['SIGTERM', 'SIGINT']) {
+for (const signal of ['SIGTERM', 'SIGINT'] as const) {
   test(`compiled JS listens and stops cleanly on ${signal}`, async () => {
     const child = spawn(process.execPath, ['dist/server.js'], {
       env: { ...process.env, PORT: '0', HOST: '127.0.0.1' },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let output = '';
-    const ready = new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('server timeout: ' + output)), 7000);
+    const ready = new Promise<string>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error(`server timeout: ${output}`)), 7000);
       child.stdout.on('data', (chunk) => {
         output += chunk.toString();
         const match = output.match(/Server listening at (http:\/\/[^"\s]+)/);
@@ -198,12 +193,12 @@ for (const signal of ['SIGTERM', 'SIGINT']) {
       });
       child.once('exit', (code) => {
         clearTimeout(timer);
-        reject(new Error('early exit: ' + code + output));
+        reject(new Error(`early exit: ${code}${output}`));
       });
     });
     try {
       const url = await ready;
-      const response = await fetch(url + '/health');
+      const response = await fetch(`${url}/health`);
       assert.equal(response.status, 200);
     } finally {
       if (child.exitCode === null) {

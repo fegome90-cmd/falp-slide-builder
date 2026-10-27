@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { STATUS_CODES } from 'node:http';
-import Fastify, { LogController, type FastifyInstance } from 'fastify';
+import Fastify, { type FastifyInstance, LogController } from 'fastify';
 import { healthPlugin } from './plugins/health.js';
 
 export interface AppComposition {
