@@ -39,4 +39,4 @@ The default address is `http://127.0.0.1:3000`. Check it with `curl http://127.0
 
 CI runs the pinned dependency installation, type checking, the inherited tests, and a production dependency audit on Node.js 24. The lockfile includes only the transitive security patches documented in [UPSTREAM.md](UPSTREAM.md). Local checks and CI results must be reported separately; an unexecuted workflow is not a passing check. No end-to-end presentation export, external-provider integration, clinical validation, or production deployment has been established by this bootstrap.
 
-The npm package is deliberately `private: true`; the GitHub repository can still be public. License status and the exact import boundary are recorded in [UPSTREAM.md](UPSTREAM.md).
+The npm package is deliberately `private: true`; the GitHub repository can still be public. The project is licensed under the [MIT License](LICENSE); the exact import boundary is recorded in [UPSTREAM.md](UPSTREAM.md).
