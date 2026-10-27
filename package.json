@@ -13,7 +13,9 @@
     "build": "tsc",
     "test": "pnpm run build && node --test tests/*.test.mjs",
     "start": "node dist/server.js",
-    "dev": "pnpm run build && node --watch dist/server.js"
+    "dev": "pnpm run build && pnpm run --parallel \"/^dev:/\"",
+    "dev:tsc": "tsc --watch --preserveWatchOutput",
+    "dev:server": "node --watch dist/server.js"
   },
   "dependencies": {
     "fastify": "5.12.7"
