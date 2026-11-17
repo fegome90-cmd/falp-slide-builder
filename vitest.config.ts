@@ -14,6 +14,11 @@ export default defineConfig({
     testTimeout: 15_000,
     // Process-level tests run dist/ and import nothing from src/, so any source change must
     // rerun the whole suite in watch mode (the global setup rebuilds dist/ first).
-    forceRerunTriggers: ['**/package.json', '**/{vitest,vite}.config.*', '**/src/**'],
+    forceRerunTriggers: [
+      '**/package.json',
+      '**/{vitest,vite}.config.*',
+      '**/src/**',
+      'studio/index.html',
+    ],
   },
 });
