@@ -2,6 +2,12 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
+    coverage: {
+      provider: 'v8',
+      include: ['src/modules/decks/domain/deck-spec.ts', 'studio/src/slide-view.tsx'],
+      reporter: ['text', 'json-summary'],
+      thresholds: { lines: 80, functions: 80, statements: 80, branches: 70 },
+    },
     include: ['tests/**/*.test.ts'],
     // Process-level tests spawn dist/server.js, so compile once before the run.
     globalSetup: ['./tests/global-setup.ts'],

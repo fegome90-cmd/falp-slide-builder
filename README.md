@@ -4,7 +4,7 @@ A **personal project by Felipe González**, starting with a minimal Fastify back
 
 ## Current scope
 
-This bootstrap provides an HTTP server, `/health`, configuration validation, error handling, lifecycle management, and automated tests. It does **not** yet provide a slide editor, AI generation, PPTX export, Figma integration, authentication, or persistence. There are no internal assets, clinical records, or patient data in this starter.
+This bootstrap provides an HTTP server, `/health`, configuration validation, error handling, lifecycle management, DeckSpec v1 validation, a read-only HTML slide showcase and automated tests. It does **not** yet provide a slide editor, AI generation, HTML export, Figma integration, authentication, or persistence. A **read-only local HTML design preview** with six synthetic slide types is available at `/studio/` after building. There are no internal assets, clinical records, or patient data in this starter.
 
 The foundation is [Kit Fundador Fastify Core at `c212571d500d737ed4d7527e41f1ae9287a3e777`](https://github.com/fegome90-cmd/kit_fundador/tree/c212571d500d737ed4d7527e41f1ae9287a3e777/templates/fastify-core). See [provenance and licensing limits](UPSTREAM.md).
 
@@ -38,10 +38,23 @@ Coding agents should read [AGENTS.md](AGENTS.md) first, then [ARCHITECTURE.md](A
 - Keep the loopback default. Binding to `0.0.0.0` or `::` exposes the process beyond loopback; it is not deployment hardening.
 - The template limits request bodies, sanitizes error responses, disables proxy trust, avoids automatic request-URL logs, and redacts sensitive headers. Schema-validation 400 responses list the failing fields (`in`, `path`, `message`). Request IDs are random UUIDs. These defaults are not a security certification.
 - Before Internet deployment, independently configure access controls, TLS, proxy trust, traffic limits, and operational monitoring. Nothing in this repository deploys anything.
-- Existing design tokens may be an **optional reference only when their license permits the intended reuse**. Preserve required notices and check code, fonts, imagery, trademarks, and other assets separately. No token package, logo, institutional asset, or font is included or required here. Design reuse does not imply institutional endorsement and is not an approval gate for developing the application.
+- Existing design tokens may be an **optional reference only when their license permits the intended reuse**. Preserve required notices and check code, fonts, imagery, trademarks, and other assets separately. No institutional logo, restricted image or font is included. The personal HTML study uses publicly documented reference colour values; distribution of protected assets still requires separate permission. Design reuse does not imply institutional endorsement and is not an approval gate for developing the application.
 
 ## Verification
 
-The blocking `verify` job runs on pushes to `main` and on pull requests, on Node.js 24. It performs a frozen dependency installation without lifecycle scripts, then runs Biome (`biome ci`: formatting, lint and architecture rules), type checking, the build, and the Vitest suite (`pnpm test`) as separate steps. A separate `audit` job runs a production dependency audit on pull requests, pushes to `main`, and weekly; it is non-blocking, so its findings do not fail CI. The lockfile includes only the transitive security patches documented in [UPSTREAM.md](UPSTREAM.md). No end-to-end presentation export, external-provider integration, clinical validation, or production deployment has been established by this bootstrap.
+The blocking `verify` job runs on pushes to `main` and on pull requests, on Node.js 24. It performs a frozen dependency installation without lifecycle scripts, then runs Biome (`biome ci`: formatting, lint and architecture rules), type checking, the build, and the Vitest suite (`pnpm test`) as separate steps. A separate `audit` job runs a production dependency audit on pull requests, pushes to `main`, and weekly; it is non-blocking, so its findings do not fail CI. The lockfile includes only the transitive security patches documented in [UPSTREAM.md](UPSTREAM.md). The read-only preview is tested with Playwright, axe and production Fastify asset routes. No end-to-end **editable** authoring, presentation export, external-provider integration, clinical validation or public deployment is established.
 
 The npm package is deliberately `private: true`; the GitHub repository can still be public. The project is licensed under the [MIT License](LICENSE); the exact import boundary is recorded in [UPSTREAM.md](UPSTREAM.md).
+
+## Local HTML visual test slice
+
+Run `corepack pnpm build` to produce both `dist/server.js` and `dist/studio/`. Start with `corepack pnpm start`, then visit `http://127.0.0.1:3000/studio/`. The six compositions show **synthetic content**, not patient records or verified clinical findings. Brand assets are intentionally absent.
+
+- `corepack pnpm check`: Biome format/lint/architecture.
+- `corepack pnpm typecheck`: TypeScript for backend, test interfaces and visual components.
+- `corepack pnpm test`: Vitest for DeckSpec validators, semantic slide components, navigation helpers, static delivery and original HTTP/runtime contracts.
+- `corepack pnpm test:coverage`: coverage for newly implemented DeckSpec and semantic slide-view functions, with blocking thresholds (80/70).
+- `corepack pnpm test:e2e`: Chromium Playwright tests against the **compiled Fastify production server**. Install its matching browser once with `corepack pnpm exec playwright install chromium`. For an existing compatible Chromium executable, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE`.
+- `corepack pnpm studio:dev`: optional Vite development server; passing Vite alone does **not** establish production readiness.
+
+HTML-only: no PPTX export. The current preview cannot save user content, import prior decks or synchronize data. Those are explicitly separate implementation gates. See `docs/QA-MATRIX.md`.

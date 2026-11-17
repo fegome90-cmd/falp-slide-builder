@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { STATUS_CODES } from 'node:http';
 import Fastify, { type FastifyInstance, LogController } from 'fastify';
 import { healthPlugin } from '#modules/health';
+import { studioPlugin } from '#modules/studio';
 
 export interface AppComposition {
   /** Register cross-cutting plugins (for example Swagger) before any routes. */
@@ -119,6 +120,7 @@ export function buildApp(composition: AppComposition = {}): FastifyInstance {
 
   composition.beforeRoutes?.(app);
   app.register(healthPlugin);
+  app.register(studioPlugin);
   composition.afterRoutes?.(app);
   return app;
 }

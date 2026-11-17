@@ -18,7 +18,7 @@ jobs:
   verify:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -39,8 +39,21 @@ jobs:
         run: corepack pnpm typecheck
       - name: Build
         run: corepack pnpm build
-      - name: Test (Vitest)
-        run: corepack pnpm test
+      - name: Test (Vitest + targeted code coverage)
+        run: corepack pnpm test:coverage
+      - name: Install Chromium for browser tests
+        run: corepack pnpm exec playwright install --with-deps chromium
+      - name: Browser, component and accessibility QA
+        run: corepack pnpm test:e2e
+      - name: Upload browser QA screenshots and failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: falp-slide-studio-visual-evidence
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
 
   audit:
     runs-on: ubuntu-24.04
