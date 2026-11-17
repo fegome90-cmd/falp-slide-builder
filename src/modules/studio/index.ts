@@ -14,7 +14,7 @@ export const studioPlugin: FastifyPluginAsync = async (app) => {
     index: ['index.html'],
     wildcard: true,
     setHeaders: (response, file) => {
-      if (file.endsWith('index.html')) response.setHeader('Cache-Control', 'no-store');
+      if (file.endsWith('index.html')) response.header('Cache-Control', 'no-store');
     },
   });
 };

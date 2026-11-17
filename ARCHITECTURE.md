@@ -116,7 +116,7 @@ A package is prohibited only when an adopted replacement already covers the same
 | Package | Role | Status | Replacement / note |
 | --- | --- | --- | --- |
 | `fastify` | HTTP server | Actively used | The only HTTP server; see Decisions. |
-| `@fastify/static` | Serve built HTML preview | Newly added | Read-only `/studio/` static delivery inside Fastify; no second server. |
+| `@fastify/static` | Serve built HTML preview | Newly added | Read-only `/studio/` static delivery inside Fastify; security-fixed 10.1.11; no second server. |
 | `react` | Semantic slide components | Newly added | Uses the six discriminated DeckSpec layouts. |
 | `react-dom` | Browser and SSR rendering | Newly added | Browser preview and server-side component tests. |
 | `@types/react` | React TypeScript types | Newly added | Included in type checking. |
@@ -163,3 +163,5 @@ This section is append-only: each decision adds one dated line. Changing a prohi
 
 - 2026-11-17: Adopted React/Vite for isolated HTML previews, @fastify/static for production routing and Playwright+axe-core for browser QA. No freehand canvas, data persistence or new UI library yet.
 - 2026-11-17: HTML-only scope supersedes historical PPTX backlog; prior decisions are retained for traceability.
+
+- 2026-11-17: @fastify/static@8.3.0 introduced security advisories (including high path traversal GHSA-83w8-p2f5-377r). Upgraded to 10.1.11, adapted setHeaders FastifyReply API, reran tests and production audit with zero known vulnerabilities. CI audit is blocking.
