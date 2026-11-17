@@ -25,7 +25,7 @@ A feature is a module in `src/modules/<name>/`. It has a public `index.ts` and o
 | `index.ts` | the module's exports for other code | its own layers, `#shared/*`, other modules via `#modules/<name>` |
 | `routes/` | HTTP handlers and request/response schemas (Fastify) | its `domain/` and `adapters/`, `#shared/*`, `fastify` |
 | `domain/` | business rules as pure functions and types | its own files, `#shared/*` |
-| `adapters/` | external systems: AI provider, PPTX writer, persistence | its own files, `#shared/*`, `domain/` types, external libraries |
+| `adapters/` | external systems: AI provider, persistence and HTML bundling | its own files, `#shared/*`, `domain/` types, external libraries |
 | `src/shared/` | utilities used by more than one module; the lowest layer (not created yet) | external libraries only |
 | `src/*.ts` | server wiring: configuration, app factory, lifecycle, entrypoint | `#modules/<name>`, `#shared/*`, sibling `src/*.ts` files |
 
@@ -82,11 +82,17 @@ Downward shift: when Gate 3 finds a problem, first try to encode it in Gate 1, a
 3. `src/modules/health/routes/health-route.ts` returns `{ "ok": true }`; the response schema allows only that shape.
 4. Errors (404, 400 validation, 413 body limit, other 4xx and 5xx) use `application/problem+json`. 5xx responses and logs omit the error message.
 
-### PLANNED (not built): deck flow
+### Built: read-only HTML design validation slice
 
-Create deck → edit or generate slides → export to PPTX.
+- `src/modules/decks/domain/deck-spec.ts` parses inert `falp.deck.v1` JSON, validates the six allowed layouts, editorial basis, references and brand revision without evaluating HTML or scripting.
+- `studio/src/slide-view.tsx` contains six **read-only** slide layouts; `studio/src/preview-app.tsx` provides a synthetic visual preview with URL and keyboard navigation.
+- `GET /studio/` and its versioned assets are served by Fastify from the Vite production build. The local site has no CDN and no unlicensed institutional images or fonts.
+- The preview is **not** the authoring editor: persistence, imports, autosave, editable panels, export and integration with Kalka are not implemented.
 
-None of these steps exist yet. When a change touches deck structures, run the tests of downstream features (generation, export) once they exist.
+### PLANNED: semantic authoring and portable HTML
+
+Validated DeckSpec → author/edit with recoverable autosave → presentation HTML bundle. No PPTX in the current scope.
+
 
 ## Library lifecycle
 
@@ -110,6 +116,15 @@ A package is prohibited only when an adopted replacement already covers the same
 | Package | Role | Status | Replacement / note |
 | --- | --- | --- | --- |
 | `fastify` | HTTP server | Actively used | The only HTTP server; see Decisions. |
+| `@fastify/static` | Serve built HTML preview | Newly added | Read-only `/studio/` static delivery inside Fastify; security-fixed 10.1.11; no second server. |
+| `react` | Semantic slide components | Newly added | Uses the six discriminated DeckSpec layouts. |
+| `react-dom` | Browser and SSR rendering | Newly added | Browser preview and server-side component tests. |
+| `@types/react` | React TypeScript types | Newly added | Included in type checking. |
+| `@types/react-dom` | React DOM TypeScript types | Newly added | Included in type checking. |
+| `vite` | Studio production bundler | Newly added | Builds static assets served by Fastify. |
+| `@playwright/test` | Browser navigation and layout tests | Newly added | Runs against Fastify production output, 4 viewport sizes. |
+| `@axe-core/playwright` | Accessibility smoke tests | Newly added | WCAG A/AA tests for the six visible slide patterns. |
+| `@vitest/coverage-v8` | Targeted unit code coverage | Newly added | Coverage gate for new DeckSpec and semantic rendering functions; E2E exercises browser UI. |
 | `typescript` | Type checking and build | Actively used | `pnpm typecheck`; `pnpm build` compiles to `dist/`. |
 | `@types/node` | Node.js type definitions | Actively used | Types for the Node 24 APIs in use. |
 | `@biomejs/biome` | Formatter, linter and architecture rules | Newly added | Replaces ESLint and Prettier. |
@@ -123,12 +138,12 @@ A package is prohibited only when an adopted replacement already covers the same
 | `lodash` | Utility functions | To be decided | Prefer native JavaScript. Add it only for a real need that native code does not meet cleanly, with the justification recorded in Decisions. |
 | `moment` | Dates and times | To be decided | Use `Date` and `Intl` when they are sufficient. Do not assume equivalence for complex temporal operations. `Temporal` is not an unconditional native replacement on Node 24 because it needs explicit enabling. |
 | `dotenv` | Environment files | To be decided | Do not add it now. If env files are needed, prefer `node --env-file`, stable in Node 24. |
-| — | Frontend framework | To be decided | Not chosen; no code depends on it. Decided with the UI library and Playwright when the frontend item starts. |
+| — | Frontend framework | Actively used | React 19 and Vite chosen for the read-only slice; editable workflow still pending. |
 | — | UI component library | To be decided | Not chosen. `fegome90-cmd/ui-kit` is a candidate, subject to license review. |
 | — | AI provider SDK | To be decided | Not chosen; needed by the AI generation module. |
-| — | PPTX library | To be decided | Not chosen; needed by the PPTX export module. |
+| — | PPTX library | Removed | Excluded from HTML-only MVP; no PPTX exporter. |
 | — | Persistence | To be decided | Not chosen; the decks slice starts in memory. |
-| `@playwright/test` | End-to-end tests for the frontend | To be decided | Adopted together with the frontend framework. |
+
 
 ### Removed or replaced
 
@@ -145,3 +160,8 @@ This section is append-only: each decision adds one dated line. Changing a prohi
 - 2026-10-27: `lodash`, `moment` and `dotenv` stay To be decided, with their criteria in the table. They are not added until a concrete need and a dated decision line exist.
 - 2026-10-27: The dependency allowlist is enforced by `tests/dependency-allowlist.test.ts`: every declared package must be registered with an installable status, and no prohibited, removed or undecided package is installed.
 - 2026-10-27: dependency-cruiser and eslint-plugin-boundaries are not used. Biome rules and the architecture canary already cover import cycles, public entries and layer direction, so these tools would duplicate that role. A need outside that role can reopen this.
+
+- 2026-11-17: Adopted React/Vite for isolated HTML previews, @fastify/static for production routing and Playwright+axe-core for browser QA. No freehand canvas, data persistence or new UI library yet.
+- 2026-11-17: HTML-only scope supersedes historical PPTX backlog; prior decisions are retained for traceability.
+
+- 2026-11-17: @fastify/static@8.3.0 introduced security advisories (including high path traversal GHSA-83w8-p2f5-377r). Upgraded to 10.1.11, adapted setHeaders FastifyReply API, reran tests and production audit with zero known vulnerabilities. CI audit is blocking.

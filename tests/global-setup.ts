@@ -1,22 +1,24 @@
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+import { build as buildVite } from 'vite';
 import type { TestProject } from 'vitest/node';
 
 const require = createRequire(import.meta.url);
 
-function build(): void {
+async function prepareTestArtifacts(): Promise<void> {
   execFileSync(
     process.execPath,
     [require.resolve('typescript/bin/tsc'), '-p', 'tsconfig.build.json'],
-    {
-      stdio: 'inherit',
-    },
+    { stdio: 'inherit' },
   );
+  await buildVite({
+    configFile: fileURLToPath(new URL('../studio/vite.config.ts', import.meta.url)),
+  });
 }
 
-export default function setup(project: TestProject): void {
-  build();
-  // Watch mode reruns tests without re-running setup; rebuild dist/ first so the
-  // process-level tests do not exercise stale compiled code.
-  project.onTestsRerun(() => build());
+export default async function setup(project: TestProject): Promise<void> {
+  await prepareTestArtifacts();
+  // Watch reruns process-level tests against rebuilt server and Studio assets.
+  project.onTestsRerun(() => prepareTestArtifacts());
 }

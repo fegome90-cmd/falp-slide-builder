@@ -25,21 +25,34 @@
     "lint": "biome lint",
     "format": "biome format --write",
     "check": "biome check",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && vite build --config studio/vite.config.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "start": "node dist/server.js",
     "dev": "pnpm run build && pnpm run --parallel \"/^dev:/\"",
     "dev:tsc": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
-    "dev:server": "node --watch dist/server.js"
+    "dev:server": "node --watch dist/server.js",
+    "studio:dev": "vite --config studio/vite.config.ts",
+    "studio:build": "vite build --config studio/vite.config.ts",
+    "test:e2e": "playwright test --config playwright.config.ts",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "fastify": "5.12.7"
+    "@fastify/static": "10.1.11",
+    "fastify": "5.12.7",
+    "react": "19.2.6",
+    "react-dom": "19.2.6"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "@biomejs/biome": "2.6.3",
+    "@playwright/test": "1.57.0",
     "@types/node": "24.19.2",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitest/coverage-v8": "5.0.5",
     "typescript": "5.9.3",
+    "vite": "8.0.13",
     "vitest": "5.0.5"
   },
   "description": "Personal presentation-builder project: initial Fastify backend foundation; not an institutional FALP product."

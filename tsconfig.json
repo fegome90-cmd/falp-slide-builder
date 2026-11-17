@@ -9,7 +9,17 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": false,
-    "types": ["node"]
+    "types": ["node"],
+    "jsx": "react-jsx"
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "vitest.config.ts"]
+  "include": [
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "vitest.config.ts",
+    "studio/src/**/*.tsx",
+    "studio/src/**/*.ts",
+    "tests/**/*.tsx",
+    "playwright.config.ts",
+    "e2e/**/*.ts"
+  ]
 }
