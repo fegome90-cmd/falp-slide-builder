@@ -37,10 +37,14 @@ jobs:
         run: corepack pnpm exec biome ci
       - name: Type check
         run: corepack pnpm typecheck
-      - name: Build
-        run: corepack pnpm build
+      - name: Test from clean checkout (no prebuild)
+        run: |
+          test ! -d dist
+          corepack pnpm test
       - name: Test (Vitest + targeted code coverage)
         run: corepack pnpm test:coverage
+      - name: Build production artifacts
+        run: corepack pnpm build
       - name: Install Chromium for browser tests
         run: corepack pnpm exec playwright install --with-deps chromium
       - name: Browser, component and accessibility QA

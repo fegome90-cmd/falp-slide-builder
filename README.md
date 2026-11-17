@@ -4,7 +4,7 @@ A **personal project by Felipe González**, starting with a minimal Fastify back
 
 ## Current scope
 
-This bootstrap provides an HTTP server, `/health`, configuration validation, error handling, lifecycle management, DeckSpec v1 validation, a read-only HTML slide showcase and automated tests. It does **not** yet provide a slide editor, AI generation, HTML export, Figma integration, authentication, or persistence. A **read-only local HTML design preview** with six synthetic slide types is available at `/studio/` after building. There are no internal assets, clinical records, or patient data in this starter.
+This bootstrap provides an HTTP server, `/health`, configuration validation, error handling, lifecycle management, DeckSpec v1 validation, a read-only HTML slide showcase and automated tests. It does **not** yet provide a slide editor, AI generation, HTML export, Figma integration, authentication, or persistence. A **read-only local HTML design preview** with six synthetic slide types is available at `/studio/` after running `pnpm build` or `pnpm test`. There are no internal assets, clinical records, or patient data in this starter.
 
 The foundation is [Kit Fundador Fastify Core at `c212571d500d737ed4d7527e41f1ae9287a3e777`](https://github.com/fegome90-cmd/kit_fundador/tree/c212571d500d737ed4d7527e41f1ae9287a3e777/templates/fastify-core). See [provenance and licensing limits](UPSTREAM.md).
 
@@ -23,7 +23,7 @@ pnpm start
 
 `corepack enable` installs shims alongside Corepack. To avoid changing an existing installation, use `corepack enable --install-directory <writable-directory>` and prepend that directory to `PATH`. Verify `pnpm --version` reports `11.25.0` from the project directory.
 
-`pnpm check` runs Biome (formatting, lint and architecture rules) without writing files. `pnpm lint` runs only the linter, and `pnpm format` rewrites files with the formatter. `pnpm test` runs the Vitest suite. Its global setup compiles `dist/` first, because the process-level tests start `dist/server.js`; `pnpm start` needs that build too, so run `pnpm build` first if you have not run the tests. Development mode is `pnpm dev`, which recompiles TypeScript and restarts the server when files change.
+`pnpm check` runs Biome (formatting, lint and architecture rules) without writing files. `pnpm lint` runs only the linter, and `pnpm format` rewrites files with the formatter. `pnpm test` runs the Vitest suite. Its asynchronous global setup compiles both `dist/server.js` (TypeScript) and `dist/studio/` (Vite) before the tests start, including from a clean checkout. `pnpm test:coverage` performs the same preparation independently. In Vitest watch mode, both artifacts rebuild on rerun. To start the server without tests, run `pnpm build` first. Development mode is `pnpm dev`.
 
 The default address is `http://127.0.0.1:3000`. Check it with `curl http://127.0.0.1:3000/health`. Optional environment variables are `PORT` (an integer from 0 to 65535) and `HOST` (`127.0.0.1`, `localhost`, `0.0.0.0`, `::1`, or `::`). Use a fixed nonzero port for the example URL; port `0` requests an automatically allocated port.
 
@@ -42,7 +42,7 @@ Coding agents should read [AGENTS.md](AGENTS.md) first, then [ARCHITECTURE.md](A
 
 ## Verification
 
-The blocking `verify` job runs on pushes to `main` and on pull requests, on Node.js 24. It performs a frozen dependency installation without lifecycle scripts, then runs Biome (`biome ci`: formatting, lint and architecture rules), type checking, the build, and the Vitest suite (`pnpm test`) as separate steps. A separate `audit` job runs a production dependency audit on pull requests, pushes to `main`, and weekly; it is non-blocking, so its findings do not fail CI. The lockfile includes only the transitive security patches documented in [UPSTREAM.md](UPSTREAM.md). The read-only preview is tested with Playwright, axe and production Fastify asset routes. No end-to-end **editable** authoring, presentation export, external-provider integration, clinical validation or public deployment is established.
+The blocking `verify` job runs on pushes to `main` and PRs on Node 24. After frozen installation, Biome and typecheck, it checks that `dist/` is absent and runs `pnpm test` before any explicit production build. The job then checks coverage, builds production assets, and runs Chromium Playwright and axe. The `audit` job checks production dependencies on PRs, pushes and weekly, and is blocking. The static HTTP test compares the served page title against the Studio source and fetches real JS/CSS. HTML/CSS freshness in watch is an operational smoke test, not a continuous CI gate. No end-to-end editable authoring, presentation export, external-provider integration, clinical validation or public deployment is established.
 
 The npm package is deliberately `private: true`; the GitHub repository can still be public. The project is licensed under the [MIT License](LICENSE); the exact import boundary is recorded in [UPSTREAM.md](UPSTREAM.md).
 
@@ -52,8 +52,8 @@ Run `corepack pnpm build` to produce both `dist/server.js` and `dist/studio/`. S
 
 - `corepack pnpm check`: Biome format/lint/architecture.
 - `corepack pnpm typecheck`: TypeScript for backend, test interfaces and visual components.
-- `corepack pnpm test`: Vitest for DeckSpec validators, semantic slide components, navigation helpers, static delivery and original HTTP/runtime contracts.
-- `corepack pnpm test:coverage`: coverage for newly implemented DeckSpec and semantic slide-view functions, with blocking thresholds (80/70).
+- `corepack pnpm test`: desde un checkout sin `dist/`, construye TypeScript y Vite antes de ejecutar DeckSpec, layouts, navegación y rutas reales HTML/JS/CSS.
+- `corepack pnpm test:coverage`: genera sus propios artefactos también desde un checkout frío y mide cobertura con umbrales (80/70).
 - `corepack pnpm test:e2e`: Chromium Playwright tests against the **compiled Fastify production server**. Install its matching browser once with `corepack pnpm exec playwright install chromium`. For an existing compatible Chromium executable, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE`.
 - `corepack pnpm studio:dev`: optional Vite development server; passing Vite alone does **not** establish production readiness.
 
